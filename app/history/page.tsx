@@ -21,172 +21,219 @@ type GenerationHistory = {
 
 export default function HistoryPage() {
   const [history, setHistory] = useState<GenerationHistory[]>([]);
-  const [loaded, setLoaded] = useState(false);
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
-    const timer = window.setTimeout(() => {
-      try {
-        const stored = localStorage.getItem("contentflow-history");
+  const timer = window.setTimeout(() => {
+    try {
+      const stored = localStorage.getItem("contentflow-history");
 
-        if (stored) {
-          const parsed: GenerationHistory[] = JSON.parse(stored);
-
-          setHistory(parsed);
-        }
-      } catch (error) {
-        console.error("Unable to load generation history:", error);
-      } finally {
-        setLoaded(true);
+      if (stored) {
+        setHistory(JSON.parse(stored));
       }
-    }, 0);
+    } catch (error) {
+      console.error("Unable to load content history:", error);
+    }
+  }, 0);
 
-    return () => window.clearTimeout(timer);
-  }, []);
+  return () => window.clearTimeout(timer);
+}, []);
 
-  function deleteGeneration(id: string) {
-    const confirmed = window.confirm(
-      "Delete this saved generation permanently?",
-    );
-
-    if (!confirmed) return;
-
-    const updated = history.filter((item) => item.id !== id);
-
+  function deleteEntry(id: string) {
+    const updated = history.filter((entry) => entry.id !== id);
     setHistory(updated);
     localStorage.setItem("contentflow-history", JSON.stringify(updated));
   }
 
-  async function copyDraft(content: string) {
-    try {
-      await navigator.clipboard.writeText(content);
-      window.alert("Draft copied!");
-    } catch {
-      window.alert("Unable to copy this draft.");
-    }
+  function clearHistory() {
+    if (!window.confirm("Delete all saved generations?")) return;
+    setHistory([]);
+    localStorage.removeItem("contentflow-history");
   }
 
+  const filteredHistory = history.filter((entry) =>
+    `${entry.sourceText} ${entry.platforms.join(" ")}`
+      .toLowerCase()
+      .includes(search.toLowerCase()),
+  );
+
   return (
-    <main className="min-h-screen bg-[#080d17] px-5 py-8 text-slate-100 sm:px-8">
-      <div className="mx-auto max-w-4xl">
-        <Link href="/" className="text-sm text-cyan-300 hover:text-cyan-200">
-          ← Back to Content Studio
-        </Link>
+    <main className="min-h-screen bg-[#080d17] text-slate-100">
+      <section className="w-full px-4 py-6 sm:px-6 lg:px-8 xl:px-10 2xl:px-12">
+        <header className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-6">
+          <div>
+            <p className="text-sm text-slate-400">
+              Workspace / Content history
+            </p>
+            <h1 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">
+              Content History
+            </h1>
+            <p className="mt-2 text-sm text-slate-400">
+              Review and manage your previously generated content.
+            </p>
+          </div>
 
-        <header className="mb-8 mt-8">
-          <p className="text-sm text-slate-400">Workspace / Content history</p>
-
-          <h1 className="mt-2 text-3xl font-bold">Content History</h1>
-
-          <p className="mt-3 text-sm text-slate-400">
-            Review and revisit your previously generated content.
-          </p>
+          <Link
+            href="/"
+            className="rounded-xl bg-cyan-300 px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-cyan-200"
+          >
+            + Create content
+          </Link>
         </header>
 
-        {!loaded ? (
-          <p className="text-sm text-slate-400">Loading history...</p>
-        ) : history.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-white/15 p-10 text-center">
-            <div className="text-3xl">▤</div>
-
-            <h2 className="mt-4 text-lg font-semibold">
-              No saved generations yet
-            </h2>
-
-            <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-400">
-              Generate content in the Content Studio. Your successful
-              generations will appear here automatically.
-            </p>
-
-            <Link
-              href="/"
-              className="mt-6 inline-block rounded-xl bg-cyan-300 px-5 py-3 text-sm font-semibold text-slate-950 hover:bg-cyan-200"
+        <div className="grid gap-4 py-8 sm:grid-cols-3">
+          {[
+            { label: "Total generations", value: history.length },
+            {
+              label: "Saved drafts",
+              value: history.reduce(
+                (total, entry) => total + entry.drafts.length,
+                0,
+              ),
+            },
+            {
+              label: "Platforms used",
+              value: new Set(history.flatMap((entry) => entry.platforms)).size,
+            },
+          ].map((stat) => (
+            <div
+              key={stat.label}
+              className="rounded-2xl border border-white/10 bg-[#101827] p-5"
             >
-              Generate content
-            </Link>
-          </div>
-        ) : (
-          <div className="space-y-5">
-            <p className="text-sm text-slate-400">
-              {history.length} saved generation
-              {history.length === 1 ? "" : "s"}
-            </p>
+              <p className="text-sm text-slate-400">{stat.label}</p>
+              <p className="mt-3 text-3xl font-bold">{stat.value}</p>
+            </div>
+          ))}
+        </div>
 
-            {history.map((item) => (
-              <article
-                key={item.id}
-                className="rounded-2xl border border-white/10 bg-[#101827] p-5"
+        <div className="rounded-2xl border border-white/10 bg-[#101827] p-5 sm:p-6">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <h2 className="text-lg font-semibold">Saved generations</h2>
+              <p className="mt-1 text-sm text-slate-400">
+                Your content is stored locally in this browser.
+              </p>
+            </div>
+
+            {history.length > 0 && (
+              <button
+                type="button"
+                onClick={clearHistory}
+                className="rounded-xl border border-red-400/20 px-4 py-2 text-sm text-red-300 transition hover:bg-red-400/10"
               >
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <h2 className="font-semibold">
-                      {item.drafts.length} generated draft
-                      {item.drafts.length === 1 ? "" : "s"}
-                    </h2>
+                Clear history
+              </button>
+            )}
+          </div>
 
-                    <p className="mt-1 text-xs text-slate-400">
-                      {new Date(item.createdAt).toLocaleString()}
-                    </p>
+          <input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search saved content or platforms..."
+            className="mt-5 w-full rounded-xl border border-white/10 bg-[#090f1b] p-3 text-sm outline-none placeholder:text-slate-600 focus:border-cyan-400"
+          />
+
+          <div className="mt-6 space-y-4">
+            {filteredHistory.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-white/15 px-5 py-12 text-center">
+                <p className="text-lg font-semibold">
+                  {history.length === 0
+                    ? "No saved generations yet"
+                    : "No matching content found"}
+                </p>
+                <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-400">
+                  {history.length === 0
+                    ? "Generate content in Content Studio and your saved results will appear here."
+                    : "Try another search term."}
+                </p>
+                {history.length === 0 && (
+                  <Link
+                    href="/"
+                    className="mt-5 inline-flex rounded-xl bg-cyan-300 px-4 py-2.5 text-sm font-semibold text-slate-950 hover:bg-cyan-200"
+                  >
+                    Open Content Studio
+                  </Link>
+                )}
+              </div>
+            ) : (
+              filteredHistory.map((entry) => (
+                <article
+                  key={entry.id}
+                  className="rounded-xl border border-white/10 bg-[#090f1b] p-4 sm:p-5"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="text-xs text-slate-500">
+                        {new Date(entry.createdAt).toLocaleString()}
+                      </p>
+                      <h3 className="mt-2 font-semibold">
+                        {entry.sourceText.slice(0, 100)}
+                        {entry.sourceText.length > 100 ? "…" : ""}
+                      </h3>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => deleteEntry(entry.id)}
+                      className="rounded-lg border border-red-400/20 px-3 py-1.5 text-xs text-red-300 hover:bg-red-400/10"
+                    >
+                      Delete
+                    </button>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => deleteGeneration(item.id)}
-                    className="rounded-lg border border-red-400/20 px-3 py-2 text-xs text-red-300 hover:bg-red-400/10"
-                  >
-                    Delete
-                  </button>
-                </div>
-
-                <p className="mt-4 line-clamp-3 whitespace-pre-wrap text-sm leading-6 text-slate-300">
-                  {item.sourceText}
-                </p>
-
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {item.drafts.map((draft, index) => (
-                    <span
-                      key={`${draft.platform}-${index}`}
-                      className="rounded-full border border-cyan-400/20 bg-cyan-400/5 px-3 py-1 text-xs text-cyan-200"
-                    >
-                      {draft.platform}
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {entry.platforms.map((platform) => (
+                      <span
+                        key={platform}
+                        className="rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3 py-1 text-xs text-cyan-200"
+                      >
+                        {platform}
+                      </span>
+                    ))}
+                    <span className="rounded-full bg-white/5 px-3 py-1 text-xs text-slate-400">
+                      {entry.tone}
                     </span>
-                  ))}
-                </div>
+                    <span className="rounded-full bg-white/5 px-3 py-1 text-xs text-slate-400">
+                      {entry.language}
+                    </span>
+                  </div>
 
-                <details className="mt-5">
-                  <summary className="cursor-pointer text-sm font-medium text-cyan-300 hover:text-cyan-200">
-                    View saved drafts
-                  </summary>
-
-                  <div className="mt-4 space-y-4">
-                    {item.drafts.map((draft, index) => (
+                  <div className="mt-5 space-y-3">
+                    {entry.drafts.map((draft, index) => (
                       <div
                         key={`${draft.platform}-${index}`}
-                        className="rounded-xl border border-white/10 bg-[#090f1b] p-4"
+                        className="rounded-lg border border-white/10 bg-[#101827] p-4"
                       >
-                        <h3 className="font-medium text-cyan-200">
+                        <h4 className="text-sm font-medium text-cyan-200">
                           {draft.platform}
-                        </h3>
-
-                        <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-300">
+                        </h4>
+                        <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-300">
                           {draft.content}
                         </p>
-
                         <button
                           type="button"
-                          onClick={() => copyDraft(draft.content)}
-                          className="mt-3 rounded-lg border border-white/10 px-3 py-2 text-xs text-slate-300 hover:bg-white/5"
+                          onClick={async () => {
+                            try {
+                              await navigator.clipboard.writeText(
+                                draft.content,
+                              );
+                            } catch (error) {
+                              console.error("Unable to copy draft:", error);
+                            }
+                          }}
+                          className="mt-3 rounded-lg border border-white/10 px-3 py-1.5 text-xs text-slate-300 hover:bg-white/5"
                         >
                           Copy draft
                         </button>
                       </div>
                     ))}
                   </div>
-                </details>
-              </article>
-            ))}
+                </article>
+              ))
+            )}
           </div>
-        )}
-      </div>
+        </div>
+      </section>
     </main>
   );
 }

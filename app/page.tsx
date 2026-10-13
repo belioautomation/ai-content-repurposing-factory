@@ -1,5 +1,5 @@
 "use client";
-import Link from "next/link";
+
 import { useEffect, useState } from "react";
 
 type GenerationHistory = {
@@ -33,6 +33,17 @@ export default function Home() {
   const [n8nStatus, setN8nStatus] = useState<
     "checking" | "connected" | "disconnected"
   >("checking");
+
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
+  const [regeneratingDraft, setRegeneratingDraft] = useState<string | null>(
+    null,
+  );
+  const [error, setError] = useState("");
+  const [copiedPlatform, setCopiedPlatform] = useState("");
+  const [drafts, setDrafts] = useState<{ platform: string; content: string }[]>(
+    [],
+  );
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -79,7 +90,7 @@ export default function Home() {
       }
     }
 
-    checkN8nHealth();
+    void checkN8nHealth();
 
     const interval = window.setInterval(checkN8nHealth, 30000);
 
@@ -89,16 +100,6 @@ export default function Home() {
     };
   }, []);
 
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [successMessage, setSuccessMessage] = useState("");
-  const [regeneratingDraft, setRegeneratingDraft] = useState<string | null>(
-    null,
-  );
-  const [error, setError] = useState("");
-  const [copiedPlatform, setCopiedPlatform] = useState("");
-  const [drafts, setDrafts] = useState<{ platform: string; content: string }[]>(
-    [],
-  );
   function saveGenerationToHistory(
     draftsToSave: { platform: string; content: string }[],
   ) {
@@ -125,6 +126,7 @@ export default function Home() {
       console.error("Unable to save generation history:", err);
     }
   }
+
   function togglePlatform(id: string) {
     setSelectedPlatforms((current) =>
       current.includes(id)
@@ -132,6 +134,7 @@ export default function Home() {
         : [...current, id],
     );
   }
+
   async function generateContent() {
     if (!sourceText.trim()) {
       setError("Please enter some source content first.");
@@ -253,83 +256,7 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-[#080d17] text-slate-100">
-      <aside className="fixed inset-y-0 left-0 hidden w-64 border-r border-white/10 bg-[#0b1220] p-6 lg:block">
-        <div className="flex items-center gap-3">
-          <div className="grid h-10 w-10 place-items-center rounded-xl bg-cyan-400 font-black text-slate-950">
-            AI
-          </div>
-          <div>
-            <p className="font-semibold">ContentFlow</p>
-            <p className="text-xs text-slate-400">Repurposing Factory</p>
-          </div>
-        </div>
-
-        <p className="mb-3 mt-10 text-xs font-semibold uppercase tracking-widest text-slate-500">
-          Workspace
-        </p>
-
-        <Link
-          href="/"
-          className="block rounded-xl border border-cyan-300/20 bg-cyan-300/10 px-4 py-3 text-sm text-cyan-200 transition hover:bg-cyan-300/15"
-        >
-          ◈ Content studio
-        </Link>
-
-        <Link
-          href="/history"
-          className="mt-2 block rounded-xl px-4 py-3 text-sm text-slate-400 transition hover:bg-white/5 hover:text-white"
-        >
-          ▤ Content history
-        </Link>
-
-        <Link
-          href="/settings"
-          className="mt-2 block rounded-xl px-4 py-3 text-sm text-slate-400 transition hover:bg-white/5 hover:text-white"
-        >
-          ⚙ Settings
-        </Link>
-
-        <div className="absolute bottom-6 left-6 right-6 rounded-xl border border-white/10 p-4">
-          <p className="text-sm font-medium">Automation status</p>
-
-          <p
-            className={`mt-2 flex items-center gap-2 text-xs ${
-              n8nStatus === "connected"
-                ? "text-emerald-300"
-                : n8nStatus === "disconnected"
-                  ? "text-red-300"
-                  : "text-amber-300"
-            }`}
-          >
-            <span
-              className={`h-2 w-2 rounded-full ${
-                n8nStatus === "connected"
-                  ? "bg-emerald-400"
-                  : n8nStatus === "disconnected"
-                    ? "bg-red-400"
-                    : "bg-amber-400"
-              }`}
-            />
-
-            {n8nStatus === "connected"
-              ? "Connected"
-              : n8nStatus === "disconnected"
-                ? "Disconnected"
-                : "Checking..."}
-          </p>
-
-          <p className="mt-2 text-xs leading-5 text-slate-500">
-            {n8nStatus === "connected"
-              ? "n8n server is responding."
-              : n8nStatus === "disconnected"
-                ? "Unable to reach the n8n server."
-                : "Checking n8n server availability..."}
-          </p>
-        </div>
-      </aside>
-
-      
-<section className="w-full px-4 py-6 sm:px-6 lg:ml-64 lg:w-[calc(100%-16rem)] lg:px-8 xl:px-10 2xl:px-12">
+      <section className="w-full px-4 py-6 sm:px-6 lg:px-8 xl:px-10 2xl:px-12">
         <header className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-6">
           <div>
             <p className="text-sm text-slate-400">Workspace / Content studio</p>
@@ -357,7 +284,7 @@ export default function Home() {
           </div>
         </header>
 
-        <div className="grid gap-6 py-8 xl:grid-cols-[1.2fr_0.8fr]">
+        <div className="flex flex-col gap-6 py-8">
           <div className="space-y-6">
             <div>
               <p className="text-sm font-medium text-cyan-300">YOUR WORKFLOW</p>
@@ -399,6 +326,7 @@ export default function Home() {
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                 {platforms.map((platform) => {
                   const active = selectedPlatforms.includes(platform.id);
+
                   return (
                     <button
                       key={platform.id}
@@ -447,6 +375,7 @@ export default function Home() {
                     <option value="friendly">Friendly</option>
                   </select>
                 </div>
+
                 <div>
                   <label
                     htmlFor="language"
@@ -466,6 +395,7 @@ export default function Home() {
                     <option>Spanish</option>
                   </select>
                 </div>
+
                 <div className="sm:col-span-2">
                   <label
                     htmlFor="audience"
@@ -531,7 +461,6 @@ export default function Home() {
                 <p className="mt-2 text-red-200/70">
                   Please check your connection and try again.
                 </p>
-
                 <button
                   type="button"
                   onClick={generateContent}
@@ -566,7 +495,7 @@ export default function Home() {
             )}
           </div>
 
-          <aside className="h-fit rounded-2xl border border-white/10 bg-[#101827] p-5 sm:p-6 xl:sticky xl:top-8">
+          <aside className="w-full rounded-2xl border border-white/10 bg-[#101827] p-5 sm:p-6">
             <div className="flex items-center justify-between gap-3">
               <h2 className="font-semibold">Output preview</h2>
               <div className="flex items-center gap-2">
@@ -632,7 +561,7 @@ export default function Home() {
                               );
                               setCopiedPlatform(draft.platform);
 
-                              setTimeout(() => {
+                              window.setTimeout(() => {
                                 setCopiedPlatform("");
                               }, 1800);
                             } catch {
@@ -655,6 +584,7 @@ export default function Home() {
                       value={draft.content}
                       onChange={(event) => {
                         const value = event.target.value;
+
                         setDrafts((current) =>
                           current.map((item, i) =>
                             i === index ? { ...item, content: value } : item,
@@ -664,6 +594,7 @@ export default function Home() {
                       rows={7}
                       className="mt-3 w-full resize-y rounded-lg border border-white/10 bg-[#101827] p-3 text-sm leading-6 text-slate-200 outline-none focus:border-cyan-400"
                     />
+
                     <div className="mt-2 flex justify-between text-xs text-slate-500">
                       <span>{draft.platform} draft</span>
                       <span>
@@ -679,6 +610,7 @@ export default function Home() {
               ) : (
                 selectedPlatforms.map((id) => {
                   const platform = platforms.find((item) => item.id === id)!;
+
                   return (
                     <div
                       key={id}

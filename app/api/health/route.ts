@@ -1,12 +1,26 @@
-
 import { NextResponse } from "next/server";
 
 export async function GET() {
+  const n8nUrl = process.env.N8N_WEBHOOK_URL;
+
+  if (!n8nUrl) {
+    return NextResponse.json(
+      {
+        status: "disconnected",
+        message: "N8N_WEBHOOK_URL is not configured.",
+      },
+      { status: 503 },
+    );
+  }
+
   try {
-    const response = await fetch("http://localhost:5678/healthz", {
+    const webhookUrl = new URL(n8nUrl);
+    const healthUrl = `${webhookUrl.origin}/healthz`;
+
+    const response = await fetch(healthUrl, {
       method: "GET",
       cache: "no-store",
-      signal: AbortSignal.timeout(3000),
+      signal: AbortSignal.timeout(10000),
     });
 
     if (!response.ok) {
@@ -27,7 +41,7 @@ export async function GET() {
     return NextResponse.json(
       {
         status: "disconnected",
-        message: "Unable to reach the n8n server.",
+        message: "Unable to reach the configured n8n server.",
       },
       { status: 503 },
     );

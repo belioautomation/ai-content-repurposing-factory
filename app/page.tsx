@@ -328,7 +328,8 @@ export default function Home() {
         </div>
       </aside>
 
-      <section className="mx-auto max-w-6xl px-5 py-8 sm:px-8 lg:ml-64 lg:px-10">
+      
+<section className="w-full px-4 py-6 sm:px-6 lg:ml-64 lg:w-[calc(100%-16rem)] lg:px-8 xl:px-10 2xl:px-12">
         <header className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-6">
           <div>
             <p className="text-sm text-slate-400">Workspace / Content studio</p>
